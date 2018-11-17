@@ -290,13 +290,15 @@ const idlPartials = {};
 
 // Takes the result of WebIDL2.parse(), an array of definitions.
 function makeMarkup(parse) {
-  return hyperHTML`<pre def="idl">${
+  return hyperHTML`<pre class="def idl">${
     webidl2writer.write(parse, {
-    templates: {
-      container: (strs, ...args) => args.length ? hyperHTML.wire()(strs, ...args) : strs[0],
-      reference: name => hyperHTML`<a>${name}</a>`
-    }
-  })}</pre>`;
+      templates: {
+        container: (strs, ...args) => args.length ? hyperHTML.wire()(strs, ...args) : strs[0],
+        trivia: t => hyperHTML`<span class='idlSectionComment'>${t}</span>`,
+        reference: name => hyperHTML`<a>${name}</a>`
+      }
+    })
+  }</pre>`;
 }
 
 function writeDefinition(obj) {
