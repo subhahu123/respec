@@ -6,29 +6,14 @@
 //  - don't use generated content in the CSS!
 import { pub } from "core/pubsubhub";
 import webidl2 from "deps/webidl2";
+import webidl2writer from "deps/webidl2writer";
 import hb from "handlebars.runtime";
 import css from "deps/text!core/css/webidl.css";
-import tmpls from "templates";
 import { normalizePadding, reindent } from "core/utils";
+import "deps/hyperhtml";
 
 export const name = "core/webidl";
 
-const idlAttributeTmpl = tmpls["attribute.html"];
-const idlCallbackTmpl = tmpls["callback.html"];
-const idlConstTmpl = tmpls["const.html"];
-const idlDictionaryTmpl = tmpls["dictionary.html"];
-const idlDictMemberTmpl = tmpls["dict-member.html"];
-const idlEnumItemTmpl = tmpls["enum-item.html"];
-const idlEnumTmpl = tmpls["enum.html"];
-const idlExtAttributeTmpl = tmpls["extended-attribute.html"];
-const idlIncludesTmpl = tmpls["includes.html"];
-const idlImplementsTmpl = tmpls["implements.html"];
-const idlInterfaceTmpl = tmpls["interface.html"];
-const idlIterableLikeTmpl = tmpls["iterable-like.html"];
-const idlLineCommentTmpl = tmpls["line-comment.html"];
-const idlMethodTmpl = tmpls["method.html"];
-const idlParamTmpl = tmpls["param.html"];
-const idlTypedefTmpl = tmpls["typedef.html"];
 // TODO: make these linkable somehow.
 // https://github.com/w3c/respec/issues/999
 // https://github.com/w3c/respec/issues/982
@@ -47,7 +32,7 @@ function registerHelpers() {
   hb.registerHelper("extAttr", obj => {
     return extAttr(obj.extAttrs);
   });
-  hb.registerHelper("extAttrClassName", function() {
+  hb.registerHelper("extAttrClassName", function () {
     const { name } = this;
     return ["Constructor", "NamedConstructor"].includes(name)
       ? "idlCtor"
@@ -69,7 +54,7 @@ function registerHelpers() {
       })
     );
   });
-  hb.registerHelper("jsIf", function(condition, options) {
+  hb.registerHelper("jsIf", function (condition, options) {
     return condition ? options.fn(this) : options.inverse(this);
   });
   hb.registerHelper("idlType", obj => {
@@ -106,7 +91,7 @@ function registerHelpers() {
   // A block helper that emits an <a title> around its contents
   // if obj.dfn exists. If it exists, that implies that
   // there's another <dfn> for the object.
-  hb.registerHelper("tryLink", function(obj, options) {
+  hb.registerHelper("tryLink", function (obj, options) {
     const content = options.fn(this);
     const isDefaultJSON =
       obj.body &&
@@ -305,10 +290,13 @@ const idlPartials = {};
 
 // Takes the result of WebIDL2.parse(), an array of definitions.
 function makeMarkup(parse) {
-  const pre = document.createElement("pre");
-  pre.classList.add("def", "idl");
-  pre.innerHTML = parse.map(writeDefinition).join("");
-  return pre;
+  return hyperHTML`<pre def="idl">${
+    webidl2writer.write(parse, {
+    templates: {
+      container: (strs, ...args) => args.length ? hyperHTML.wire()(strs, ...args) : strs[0],
+      reference: name => hyperHTML`<a>${name}</a>`
+    }
+  })}</pre>`;
 }
 
 function writeDefinition(obj) {
@@ -568,11 +556,11 @@ function linkDefinitions(parse, definitionMap, parent, idlElem) {
             defn.overload || !defn.body || !defn.body.arguments.length
               ? ""
               : "-" +
-                defn.body.arguments
-                  .filter(arg => !whitespaceTypes.has(arg.type))
-                  .map(arg => arg.name.toLowerCase())
-                  .join("-")
-                  .replace(/\s/g, "_");
+              defn.body.arguments
+                .filter(arg => !whitespaceTypes.has(arg.type))
+                .map(arg => arg.name.toLowerCase())
+                .join("-")
+                .replace(/\s/g, "_");
           defn.idlId = idHead + idTail;
           break;
         }
@@ -726,7 +714,7 @@ function findDfn(defn, parent, name, definitionMap, type, idlElem) {
   if (dfns.length > 1) {
     const msg = `Multiple \`<dfn>\`s for \`${originalName}\` ${
       originalParent ? `in \`${originalParent}\`` : ""
-    }`;
+      }`;
     pub("error", msg);
   }
   if (dfns.length === 0) {
