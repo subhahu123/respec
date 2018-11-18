@@ -9,7 +9,7 @@ import webidl2 from "deps/webidl2";
 import webidl2writer from "deps/webidl2writer";
 import hb from "handlebars.runtime";
 import css from "deps/text!core/css/webidl.css";
-import { normalizePadding, reindent } from "core/utils";
+import { normalizePadding, reindent, flatten } from "core/utils";
 import "deps/hyperhtml";
 
 export const name = "core/webidl";
@@ -293,8 +293,8 @@ function makeMarkup(parse) {
   return hyperHTML`<pre class="def idl">${
     webidl2writer.write(parse, {
       templates: {
-        container: (strs, ...args) => args.length ? hyperHTML.wire()(strs, ...args) : strs[0],
-        trivia: t => hyperHTML`<span class='idlSectionComment'>${t}</span>`,
+        container: items => items.reduce(flatten, []).map(x => typeof x === "string" ? new Text(x) : x),
+        trivia: t => t.trim() ? hyperHTML`<span class='idlSectionComment'>${t}</span>` : t,
         reference: name => hyperHTML`<a>${name}</a>`
       }
     })
