@@ -293,9 +293,12 @@ function makeMarkup(parse) {
   return hyperHTML`<pre class="def idl">${
     webidl2writer.write(parse, {
       templates: {
-        container: items => items.reduce(flatten, []).map(x => typeof x === "string" ? new Text(x) : x),
+        wrap: items => items.reduce(flatten, []).map(x => typeof x === "string" ? new Text(x) : x),
         trivia: t => t.trim() ? hyperHTML`<span class='idlSectionComment'>${t}</span>` : t,
-        reference: name => hyperHTML`<a>${name}</a>`
+        reference: name => hyperHTML`<a>${name}</a>`,
+        interface: (contents, { data }) => 
+          hyperHTML`<span class='idlInterface' id='{{obj.idlId}}' data-idl data-title='${data.name}'>${contents}</span>`,
+        includes: contents => hyperHTML`<span class='idlIncludes'>${contents}</span>`
       }
     })
   }</pre>`;
